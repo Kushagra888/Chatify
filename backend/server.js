@@ -22,6 +22,8 @@ const allowedOrigins = [
     "https://www.chatify.kushagra-chavel.me"
 ];
 
+console.log("Server starting with allowed origins:", allowedOrigins);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -33,12 +35,15 @@ app.use(cookieParser());
 
 app.use(cors({
     origin: function (origin, callback) {
+        console.log("Incoming request from origin:", origin);
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
         if (allowedOrigins.indexOf(origin) === -1) {
+            console.log("Origin not allowed:", origin);
             return callback(null, false);
         }
+        console.log("Origin allowed:", origin);
         return callback(null, true);
     },
     credentials: true,
