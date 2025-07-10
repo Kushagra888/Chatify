@@ -1,6 +1,8 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
+import Message from "../models/message.model.js";
+import Conversation from "../models/conversation.model.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -55,6 +57,41 @@ io.on("connection", (socket) => {
     // Handle explicit request for online users
     socket.on("getOnlineUsers", () => {
         broadcastOnlineUsers();
+    });
+
+    // Handle request for messages
+    socket.on("getMessages", async ({ receiverId }) => {
+        try {
+            if (!userId || !receiverId) return;
+            
+            // Find conversation
+            const conversation = await Conversation.findOne({
+                participants: { $all: [userId, receiverId] },
+            });
+            
+            if (!conversation) return;
+            
+            // Get messages
+            const messages = await Message.find({
+                conversationId: conversation._id
+            }).sort({ createdAt: 1 });
+            
+            // Format messages
+            const formattedMessages = messages.map(msg => ({
+                _id: msg._id.toString(),
+                senderId: msg.senderId.toString(),
+                receiverId: msg.receiverId.toString(),
+                message: msg.message,
+                conversationId: msg.conversationId.toString(),
+                createdAt: msg.createdAt,
+                updatedAt: msg.updatedAt
+            }));
+            
+            // Send messages to the requesting user
+            socket.emit("messageHistory", formattedMessages);
+        } catch (error) {
+            console.error("Error fetching messages:", error);
+        }
     });
 
     socket.on("error", (error) => {

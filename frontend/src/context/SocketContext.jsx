@@ -16,8 +16,12 @@ export const SocketContextProvider = ({ children }) => {
 
 	useEffect(() => {
 		if (authUser) {
-			// Remove the /api prefix for socket connection
-			const serverUrl = getApiUrl('').replace('/api', '');
+			// Get the correct server URL for socket connection
+			const isProd = import.meta.env.PROD;
+			const serverUrl = isProd 
+				? "https://api.chatify.kushagra-chavel.me"
+				: "http://localhost:5000";
+				
 			console.log(`Connecting to socket server at ${serverUrl}`);
 			
 			const newSocket = io(serverUrl, {
