@@ -24,31 +24,49 @@ export const SocketContextProvider = ({ children }) => {
 				query: {
 					userId: authUser._id
 				},
-				withCredentials: true
+				withCredentials: true,
+				reconnection: true,
+				reconnectionAttempts: 5,
+				reconnectionDelay: 1000
 			});
 
 			newSocket.on("connect", () => {
 				console.log(`Socket connected with ID: ${newSocket.id}`);
 				console.log(`User ID: ${authUser._id}`);
+				// Request online users immediately after connection
+				newSocket.emit("getOnlineUsers");
 			});
 
 			newSocket.on("disconnect", () => {
 				console.log("Socket disconnected");
+				setOnlineUsers([]); // Clear online users on disconnect
 			});
 
 			newSocket.on("connect_error", (error) => {
 				console.log(`Connection error: ${error.message}`);
+				// Try to reconnect on error
+				setTimeout(() => {
+					newSocket.connect();
+				}, 1000);
 			});
 
 			newSocket.on("getOnlineUsers", (users) => {
 				console.log("Online users updated:", users);
-				setOnlineUsers(users);
+				setOnlineUsers(users || []); // Ensure we always have an array
 			});
+
+			// Request online users periodically
+			const interval = setInterval(() => {
+				if (newSocket.connected) {
+					newSocket.emit("getOnlineUsers");
+				}
+			}, 5000);
 
 			setSocket(newSocket);
 
 			return () => {
-				console.log("Closing socket connection");
+				console.log("Cleaning up socket connection");
+				clearInterval(interval);
 				newSocket.disconnect();
 			};
 		} else {
@@ -56,6 +74,7 @@ export const SocketContextProvider = ({ children }) => {
 				console.log("No auth user, closing socket");
 				socket.disconnect();
 				setSocket(null);
+				setOnlineUsers([]); // Clear online users when logged out
 			}
 		}
 	}, [authUser]);

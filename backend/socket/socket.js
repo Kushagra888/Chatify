@@ -25,13 +25,19 @@ const io = new Server(server, {
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization"]
     },
-    transports: ['websocket', 'polling']
+    transports: ['websocket', 'polling'],
+    pingTimeout: 60000,
+    pingInterval: 25000
 });
 
 const userSocketMap = {}; // {userId: socketId}
 
 export const getReceiverSocketId = (receiverId) => {
     return userSocketMap[receiverId];
+};
+
+const broadcastOnlineUsers = () => {
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
 };
 
 io.on("connection", (socket) => {
@@ -43,8 +49,13 @@ io.on("connection", (socket) => {
         console.log(`User ${userId} connected with socket ${socket.id}`);
         userSocketMap[userId] = socket.id;
         console.log("Connected users:", userSocketMap);
-        io.emit("getOnlineUsers", Object.keys(userSocketMap));
+        broadcastOnlineUsers();
     }
+
+    // Handle explicit request for online users
+    socket.on("getOnlineUsers", () => {
+        broadcastOnlineUsers();
+    });
 
     socket.on("error", (error) => {
         console.error("Socket error:", error);
@@ -56,7 +67,7 @@ io.on("connection", (socket) => {
         if (userId && userId !== "undefined") {
             console.log(`User ${userId} disconnected`);
             delete userSocketMap[userId];
-            io.emit("getOnlineUsers", Object.keys(userSocketMap));
+            broadcastOnlineUsers();
         }
     });
 });
