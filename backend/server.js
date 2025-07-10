@@ -15,11 +15,35 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://chatify.kushagra-chavel.me",
+    "https://www.chatify.kushagra-chavel.me"
+];
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: "Something went wrong!" });
+});
+
 app.use(express.json()); 
 app.use(cookieParser());
+
 app.use(cors({
-	origin: ["http://localhost:3000", "http://localhost:5173", "https://chatify.kushagra-chavel.me"],
-	credentials: true
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            return callback(null, false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 app.use("/api/auth", authRoutes);
@@ -28,10 +52,15 @@ app.use("/api/users", userRoutes);
 
 // Health check endpoint
 app.get("/", (req, res) => {
-	res.json({ message: "Server is running!" });
+    res.json({ message: "Server is running!" });
+});
+
+// Catch-all route for handling 404s
+app.use((req, res) => {
+    res.status(404).json({ error: "Route not found" });
 });
 
 server.listen(PORT, () => {
-	connectToMongoDB();
-	console.log(`Server Running on port ${PORT}`);
+    connectToMongoDB();
+    console.log(`Server Running on port ${PORT}`);
 });
