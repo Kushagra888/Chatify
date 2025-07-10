@@ -15,15 +15,18 @@ export const SocketContextProvider = ({ children }) => {
 
 	useEffect(() => {
 		if (authUser) {
-			// Use a fixed server URL for simplicity
-			const serverUrl = "http://localhost:5000";
+			// Use environment variable for production or localhost for development
+			const serverUrl = import.meta.env.PROD 
+				? "https://api.chatify.kushagra-chavel.me" 
+				: "http://localhost:5000";
 			console.log(`Connecting to socket server at ${serverUrl}`);
 			
 			// Create socket connection
 			const newSocket = io(serverUrl, {
 				query: {
 					userId: authUser._id
-				}
+				},
+				withCredentials: true
 			});
 
 			// Set up event handlers
