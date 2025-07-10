@@ -14,12 +14,16 @@ const allowedOrigins = [
     "https://www.chatify.kushagra-chavel.me"
 ];
 
+console.log("Setting up socket server with allowed origins:", allowedOrigins);
+
 const io = new Server(server, {
     cors: {
         origin: function (origin, callback) {
+            console.log("Socket connection attempt from origin:", origin);
             if (!origin || allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
+                console.log("Origin not allowed:", origin);
                 callback(new Error('Not allowed by CORS'));
             }
         },
@@ -39,7 +43,9 @@ export const getReceiverSocketId = (receiverId) => {
 };
 
 const broadcastOnlineUsers = () => {
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    const users = Object.keys(userSocketMap);
+    console.log("Broadcasting online users:", users);
+    io.emit("getOnlineUsers", users);
 };
 
 io.on("connection", (socket) => {
@@ -56,20 +62,30 @@ io.on("connection", (socket) => {
 
     // Handle explicit request for online users
     socket.on("getOnlineUsers", () => {
+        console.log("Received request for online users");
         broadcastOnlineUsers();
     });
 
     // Handle request for messages
     socket.on("getMessages", async ({ receiverId }) => {
         try {
-            if (!userId || !receiverId) return;
+            if (!userId || !receiverId) {
+                console.log("Missing userId or receiverId for getMessages");
+                return;
+            }
+            
+            console.log(`Fetching messages between ${userId} and ${receiverId}`);
             
             // Find conversation
             const conversation = await Conversation.findOne({
                 participants: { $all: [userId, receiverId] },
             });
             
-            if (!conversation) return;
+            if (!conversation) {
+                console.log("No conversation found");
+                socket.emit("messageHistory", []);
+                return;
+            }
             
             // Get messages
             const messages = await Message.find({
@@ -86,6 +102,8 @@ io.on("connection", (socket) => {
                 createdAt: msg.createdAt,
                 updatedAt: msg.updatedAt
             }));
+            
+            console.log(`Sending ${formattedMessages.length} messages to socket ${socket.id}`);
             
             // Send messages to the requesting user
             socket.emit("messageHistory", formattedMessages);
