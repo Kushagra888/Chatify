@@ -2,6 +2,7 @@ import { useState } from "react";
 import useConversation from "../zustand/useConversation";
 import toast from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContext";
+import { getApiUrl } from "../config";
 
 const useSendMessage = () => {
 	const [loading, setLoading] = useState(false);
@@ -37,11 +38,12 @@ const useSendMessage = () => {
 			console.log("Sending message to:", selectedConversation._id);
 			
 			// Send message to server
-			const res = await fetch(`/api/messages/send/${selectedConversation._id}`, {
+			const res = await fetch(getApiUrl(`/api/messages/send/${selectedConversation._id}`), {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
+				credentials: "include",
 				body: JSON.stringify({ message }),
 			});
 			
