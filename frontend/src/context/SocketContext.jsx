@@ -15,13 +15,12 @@ export const SocketContextProvider = ({ children }) => {
 
 	useEffect(() => {
 		if (authUser) {
-			// Use environment variable for production or localhost for development
 			const serverUrl = import.meta.env.PROD 
 				? "https://api.chatify.kushagra-chavel.me" 
 				: "http://localhost:5000";
+				
 			console.log(`Connecting to socket server at ${serverUrl}`);
 			
-			// Create socket connection
 			const newSocket = io(serverUrl, {
 				query: {
 					userId: authUser._id
@@ -29,7 +28,6 @@ export const SocketContextProvider = ({ children }) => {
 				withCredentials: true
 			});
 
-			// Set up event handlers
 			newSocket.on("connect", () => {
 				console.log(`Socket connected with ID: ${newSocket.id}`);
 				console.log(`User ID: ${authUser._id}`);
@@ -48,16 +46,13 @@ export const SocketContextProvider = ({ children }) => {
 				setOnlineUsers(users);
 			});
 
-			// Store the socket in state
 			setSocket(newSocket);
 
-			// Clean up on unmount
 			return () => {
 				console.log("Closing socket connection");
 				newSocket.disconnect();
 			};
 		} else {
-			// No auth user, close any existing socket
 			if (socket) {
 				console.log("No auth user, closing socket");
 				socket.disconnect();
