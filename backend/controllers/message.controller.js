@@ -8,7 +8,6 @@ export const sendMessage = async (req, res) => {
 		const { id: receiverId } = req.params;
 		const senderId = req.user._id;
 
-		
 		let conversation = await Conversation.findOne({
 			participants: { $all: [senderId, receiverId] },
 		});
@@ -28,10 +27,8 @@ export const sendMessage = async (req, res) => {
 
 		conversation.messages.push(newMessage._id);
 
-	
 		await Promise.all([conversation.save(), newMessage.save()]);
 
-	
 		const messageToSend = {
 			_id: newMessage._id.toString(),
 			senderId: senderId.toString(),
@@ -42,11 +39,20 @@ export const sendMessage = async (req, res) => {
 			updatedAt: newMessage.updatedAt
 		};
 
+		// Get the socket ID of the receiver
+		const receiverSocketId = getReceiverSocketId(receiverId);
 		
-
-		io.emit("newMessage", messageToSend);
-
+		// Send to the specific receiver if they're online
+		if (receiverSocketId) {
+			io.to(receiverSocketId).emit("newMessage", messageToSend);
+		}
 		
+		// Also send back to the sender's socket to handle multiple tabs/windows
+		const senderSocketId = getReceiverSocketId(senderId);
+		if (senderSocketId) {
+			io.to(senderSocketId).emit("newMessage", messageToSend);
+		}
+
 		res.status(201).json(messageToSend);
 	} catch (error) {
 		console.log("Error in sendMessage controller: ", error.message);
@@ -63,12 +69,10 @@ export const getMessages = async (req, res) => {
 			participants: { $all: [senderId, userToChatId] },
 		});
 
-		
 		if (!conversation) {
 			return res.status(200).json([]);
 		}
 
-	
 		const messages = await Message.find({
 			conversationId: conversation._id
 		}).sort({ createdAt: 1 });
