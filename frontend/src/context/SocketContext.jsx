@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import { useAuthContext } from "./AuthContext";
 import io from "socket.io-client";
+import { getApiUrl } from "../config";
 
 const SocketContext = createContext();
 
@@ -15,10 +16,8 @@ export const SocketContextProvider = ({ children }) => {
 
 	useEffect(() => {
 		if (authUser) {
-			const serverUrl = import.meta.env.PROD 
-				? "https://api.chatify.kushagra-chavel.me" 
-				: "http://localhost:5000";
-				
+			// Remove the /api prefix for socket connection
+			const serverUrl = getApiUrl('').replace('/api', '');
 			console.log(`Connecting to socket server at ${serverUrl}`);
 			
 			const newSocket = io(serverUrl, {

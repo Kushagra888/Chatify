@@ -17,11 +17,6 @@ export default defineConfig(({ mode }) => {
 					secure: false,
 				},
 			} : undefined
-		},
-		define: {
-			__API_BASE_URL__: JSON.stringify(
-				isDev ? '' : 'https://api.chatify.kushagra-chavel.me'
-			)
 		}
 	};
 });
