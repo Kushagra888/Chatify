@@ -2,6 +2,8 @@
 
 A modern real-time chat application built with the MERN stack (MongoDB, Express.js, React.js, Node.js) that enables users to communicate in real-time with a sleek and responsive interface.
 
+👉 [Click to watch demo video](https://drive.google.com/file/d/1gnNAFdMHhnlC1Wk2etaC6YKhONTNyrFC/view?usp=sharing)
+
 ## 🌟 Features
 
 - Real-time messaging using Socket.io
